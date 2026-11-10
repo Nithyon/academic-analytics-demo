@@ -42,8 +42,18 @@ def _is_num(v):
 
 
 def summarise(columns, rows):
+    try:
+        return _summarise(columns, rows)
+    except Exception:  # unusual result shapes must never break the answer
+        return f"{len(rows)} row(s) returned; see the table."
+
+
+def _summarise(columns, rows):
     if not rows:
         return "No rows matched this question."
+    if not any(_is_num(v) for v in rows[0]):
+        vals = ", ".join(str(r[0]) for r in rows[:5])
+        return f"Result: {vals}." if len(rows) <= 5 else f"{len(rows)} rows returned, starting with {vals}."
     if len(columns) == 1 and len(rows) == 1:
         return f"The {_label(columns[0])} is {_fmt(rows[0][0])}."
     first_is_label = not _is_num(rows[0][0])
