@@ -5,13 +5,14 @@ or:              uvicorn backend.main:app --reload
 then open        http://127.0.0.1:8000
 """
 from contextlib import asynccontextmanager
+from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import audit, config, data_generator, evaluation, llm, pipeline
+from . import audit, config, data_generator, evaluation, excel_io, llm, pipeline
 from .schema import schema_metadata
 
 
@@ -91,6 +92,31 @@ def evaluate(llm_mode: str = "offline"):
 @app.post("/api/regenerate")
 def regenerate(body: RegenIn):
     return data_generator.build(body.seed)
+
+
+@app.post("/api/import")
+async def import_excel(files: list[UploadFile] = File(...)):
+    """Upload faculty workbooks; each replaces its course, section and term in the database."""
+    up = config.DATA_DIR / "uploads"
+    up.mkdir(parents=True, exist_ok=True)
+    paths = []
+    for f in files:
+        if not f.filename.lower().endswith(".xlsx"):
+            raise HTTPException(400, f"{f.filename}: only .xlsx workbooks are accepted")
+        p = up / Path(f.filename).name
+        p.write_bytes(await f.read())
+        paths.append(p)
+    try:
+        return excel_io.import_sheets(paths)
+    except Exception as exc:  # malformed workbook
+        raise HTTPException(400, f"Could not read the workbook: {exc}") from exc
+
+
+@app.get("/api/import/sample")
+def import_sample():
+    out = config.DATA_DIR / "sample_sheet"
+    paths = excel_io.export_sheets(config.CURRENT_TERM, out, limit=1)
+    return FileResponse(paths[0], filename=paths[0].name)
 
 
 @app.get("/")

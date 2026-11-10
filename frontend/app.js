@@ -268,6 +268,35 @@ function renderEval(which) {
   $$("#eval-items .seg button").forEach((b) => b.addEventListener("click", () => renderEval(+b.dataset.i)));
 }
 
+/* ---------------------------------------------------------------- excel import */
+$("#import-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const files = $("#import-files").files;
+  const out = $("#import-result");
+  if (!files.length) { out.innerHTML = '<p class="muted">Choose one or more .xlsx files first.</p>'; return; }
+  const fd = new FormData();
+  [...files].forEach((f) => fd.append("files", f));
+  const btn = $("#import-run");
+  btn.disabled = true; btn.textContent = "Importing…";
+  try {
+    const res = await fetch("/api/import", { method: "POST", body: fd });
+    const r = await res.json();
+    if (!res.ok) throw new Error(r.detail || res.statusText);
+    const probs = r.problems || [];
+    out.innerHTML = `<div class="stats">
+        <div class="stat"><b>${r.files}</b><span>Workbooks imported</span></div>
+        <div class="stat"><b>${r.attendance_rows}</b><span>Attendance rows</span></div>
+        <div class="stat"><b>${r.assessment_rows}</b><span>Mark rows</span></div>
+        <div class="stat"><b>${probs.length}</b><span>Problems</span></div></div>`
+      + (probs.length ? `<h3>Problems (rows or cells skipped)</h3><ul class="problems">${probs.slice(0, 200)
+        .map((p) => `<li>${esc(p)}</li>`).join("")}</ul>` : '<p class="good-txt">No problems found. Ask a question in the Live demo tab to use the new data.</p>');
+  } catch (err) {
+    out.innerHTML = `<p class="bad-txt">Import failed: ${esc(err.message)}</p>`;
+  } finally {
+    btn.disabled = false; btn.textContent = "Upload and import";
+  }
+});
+
 /* ---------------------------------------------------------------- schema */
 const AREAS = { dim_term: "term", dim_student: "student", dim_course: "course", dim_section: "section" };
 

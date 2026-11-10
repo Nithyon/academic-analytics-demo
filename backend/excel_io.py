@@ -98,6 +98,12 @@ def import_sheets(paths, db_path=None):
             report["problems"].append(f"{path.name}: unknown course, section or term in Info sheet")
             continue
         cid, sid, tid = cid[0], sid[0], tid[0]
+        # re-uploading a workbook replaces that course, section and term
+        removed = con.execute("DELETE FROM fact_attendance WHERE course_id = ? AND section_id = ? AND term_id = ?",
+                              (cid, sid, tid)).rowcount
+        removed += con.execute("DELETE FROM fact_assessment WHERE course_id = ? AND section_id = ? AND term_id = ?",
+                               (cid, sid, tid)).rowcount
+        report["replaced_rows"] = report.get("replaced_rows", 0) + removed
         items = {}
         for iid, cname, iname, pmax, compid in con.execute(
                 """SELECT i.item_id, c.component_name, i.item_name, i.paper_max, c.component_id FROM dim_item i

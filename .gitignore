@@ -10,3 +10,6 @@ data/sheets_roundtrip/
 data/ui_eval/
 data/test_import/
 results/smoke/
+data/uploads/
+data/sample_sheet/
+results/log_*.txt

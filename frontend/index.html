@@ -21,6 +21,7 @@
       <button class="tab" data-tab="audit" role="tab">Audit log</button>
       <button class="tab" data-tab="eval" role="tab">Evaluation</button>
       <button class="tab" data-tab="schema" role="tab">Schema &amp; data</button>
+      <button class="tab" data-tab="import" role="tab">Upload Excel</button>
     </nav>
   </header>
 
@@ -190,7 +191,7 @@
     <section id="tab-schema" class="tabpanel">
       <div class="card">
         <div class="card-head">
-          <h2>Star schema <small>two facts, four dimensions</small></h2>
+          <h2>Star schema <small>two facts, nine dimensions, three summary tables</small></h2>
           <form id="regen-form" class="regen">
             <label>Seed <input type="number" id="seed" value="7" min="0" max="99999"></label>
             <button class="btn" type="submit">Regenerate synthetic data</button>
@@ -200,6 +201,28 @@
         <p class="caption">Columns marked 🔒 hold personal data. They exist in the database but are
           not on the allow-list, so the validator rejects any query that uses them.</p>
         <div id="stats" class="stats"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ IMPORT -->
+    <section id="tab-import" class="tabpanel">
+      <div class="card">
+        <div class="card-head">
+          <h2>Upload faculty Excel sheets <small>attendance and marks, one workbook per course and section</small></h2>
+          <a class="btn" id="sample-link" href="/api/import/sample" download>Download a sample workbook</a>
+        </div>
+        <p class="caption">Each workbook has three sheets. <b>Info</b>: course_code, section_code, term.
+          <b>Attendance</b>: Roll No, Name, then one column per class hour such as <code>2026-08-12 P3</code>
+          with P, A, OD or ML. <b>Marks</b>: Roll No, Name, then one column per paper item such as
+          <code>Lab test | Lab test viva (5)</code> with the mark, AB (absent) or W (withheld).
+          Uploading a workbook again replaces that course and section for that term. Converted marks,
+          totals, grades and attendance percentages are recomputed with the rules in
+          <code>backend/rules.py</code>.</p>
+        <form id="import-form" class="import-form">
+          <input type="file" id="import-files" accept=".xlsx" multiple>
+          <button class="btn btn-primary" type="submit" id="import-run">Upload and import</button>
+        </form>
+        <div id="import-result"></div>
       </div>
     </section>
   </main>

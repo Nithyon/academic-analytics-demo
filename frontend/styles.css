@@ -273,3 +273,9 @@ details.final-sql pre { margin-top: 6px; }
 .limit-note { font-size: 12px; color: var(--muted); margin-top: 4px; }
 .star .tbl.dimension { align-self: center; }
 #tab-audit .table-wrap { max-height: 70vh; }
+
+/* ---------------------------------------------------------------- excel import */
+.import-form { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 14px 0; }
+.import-form input[type=file] { font: inherit; }
+.problems { max-height: 320px; overflow: auto; font-size: 13px; line-height: 1.5; padding-left: 18px; }
+#sample-link { text-decoration: none; }
