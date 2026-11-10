@@ -126,3 +126,12 @@ experiment pipeline used for the paper.
 
 New modules: `rules.py` (every institution assumption), `summaries.py` (conversions and
 grades), `ontology.py` + `retriever.py` (the RAG step), `excel_io.py`, `report.py`.
+
+## MCP server and Google Drive (optional)
+
+`python -m backend.mcp_server` exposes the system to MCP clients (Claude Desktop, IDEs) with
+five tools: `ask_question`, `list_courses`, `describe_metrics`, `import_workbooks` and
+`sync_drive_folder`. No tool runs raw SQL, so every request passes the validator.
+`python -m backend.drive_sync folder "G:/My Drive/..."` imports new or changed workbooks
+from a Drive-mirrored folder. See `docs/mcp.md` for the Claude Desktop config and the
+privacy trade-off. Test: `python -m tests.test_mcp`.
