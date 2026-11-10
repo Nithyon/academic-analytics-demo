@@ -1,0 +1,18 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Install requirements",
+      "type": "shell",
+      "command": "python -m pip install -r requirements.txt",
+      "problemMatcher": []
+    },
+    {
+      "label": "Start demo",
+      "type": "shell",
+      "command": "python run.py",
+      "isBackground": true,
+      "problemMatcher": []
+    }
+  ]
+}

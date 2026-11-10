@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Academic Analytics RAG · Live demo</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <div class="headline">
+      <span class="headline-left">Responsible &amp; Agentic AI · Course Project · Team 7</span>
+      <span class="headline-right" id="health">connecting…</span>
+    </div>
+    <div class="titleband">
+      <h1>Academic Analytics RAG over a Local Star Schema</h1>
+      <p>Safe, explainable text-to-SQL over synthetic academic data with a locally hosted language model</p>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-tab="demo" role="tab">Live demo</button>
+      <button class="tab" data-tab="audit" role="tab">Audit log</button>
+      <button class="tab" data-tab="eval" role="tab">Evaluation</button>
+      <button class="tab" data-tab="schema" role="tab">Schema &amp; data</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ============================================================ LIVE DEMO -->
+    <section id="tab-demo" class="tabpanel active">
+      <div class="demo-grid">
+        <div class="col-left">
+          <div class="card">
+            <h2>Ask a question</h2>
+            <form id="ask-form">
+              <textarea id="question" rows="3" maxlength="500"
+                placeholder="e.g. Average attendance per section of CS2101 this term?"></textarea>
+              <button type="submit" class="btn-primary" id="ask-btn">Ask</button>
+            </form>
+
+            <h3>Try these</h3>
+            <div class="chips" id="examples"></div>
+
+            <h3>Settings</h3>
+            <div class="settings">
+              <label class="setting">
+                <span>Model</span>
+                <select id="llm">
+                  <option value="offline">Offline demo model</option>
+                  <option value="ollama">Qwen2.5-Coder via Ollama</option>
+                </select>
+              </label>
+              <label class="setting toggle">
+                <input type="checkbox" id="compromised">
+                <span class="switch"></span>
+                <span>Simulate a compromised model <small>(appends a hidden payload)</small></span>
+              </label>
+              <label class="setting toggle">
+                <input type="checkbox" id="validator" checked>
+                <span class="switch"></span>
+                <span>SQL validator on <small>(turn off for the B4 ablation)</small></span>
+              </label>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="col-right">
+          <div class="card">
+            <div class="card-head">
+              <h2>High-level architecture · live trace</h2>
+              <div class="legend">
+                <span><i class="dot ok"></i>passed</span>
+                <span><i class="dot warn"></i>retry / clarify</span>
+                <span><i class="dot fail"></i>blocked / declined</span>
+                <span><i class="dot idle"></i>not used</span>
+              </div>
+            </div>
+
+            <div class="arch" id="arch">
+              <div class="layer" style="grid-area:A">
+                <div class="layer-tag">A · User Interface &amp; Presentation</div>
+                <div class="nodes">
+                  <div class="node n-teal pill" data-node="user"><b>Faculty / Admin</b><span>user</span></div>
+                  <div class="arrow">→</div>
+                  <div class="node n-navy" data-node="ui"><b>Web App</b><span>HTML / CSS</span></div>
+                  <div class="arrow">→</div>
+                  <div class="node n-magenta" data-node="panel"><b>Explanation Panel</b><span>answer, SQL, tables used</span></div>
+                </div>
+              </div>
+
+              <div class="layer" style="grid-area:B">
+                <div class="layer-tag">B · AI Application &amp; Orchestration</div>
+                <div class="nodes">
+                  <div class="node n-green" data-node="api"><b>FastAPI Backend</b><span>orchestrator</span></div>
+                  <div class="arrow">→</div>
+                  <div class="node n-green" data-node="router"><b>Question Router</b><span>answer / clarify / decline</span></div>
+                  <div class="arrow">→</div>
+                  <div class="node n-green" data-node="llm"><b>Local Qwen LLM</b><span>Ollama / llama.cpp</span></div>
+                  <div class="arrow">⋯</div>
+                  <div class="node n-green" data-node="explainer"><b>Explanation Generator</b><span>grounding check</span></div>
+                </div>
+              </div>
+
+              <div class="layer" style="grid-area:E">
+                <div class="layer-tag">E · Audit &amp; Evaluation</div>
+                <div class="nodes">
+                  <div class="node n-orange cyl" data-node="audit"><b>Audit log</b><span>question, SQL, decision</span></div>
+                  <div class="arrow">→</div>
+                  <div class="node n-navy" data-node="eval"><b>Evaluation harness</b><span>dev / test / challenge</span></div>
+                </div>
+              </div>
+
+              <div class="layer layer-red" style="grid-area:C">
+                <div class="layer-tag">C · Safety &amp; Policy Gate</div>
+                <div class="nodes">
+                  <div class="node n-navy" data-node="validator"><b>SQL Validator</b><span>sqlglot · 5 checks</span></div>
+                  <div class="arrow">→</div>
+                  <div class="node n-diamond" data-node="gate"><b>Passes?</b></div>
+                  <div class="node n-reject wide" data-node="reject"><b>Rejected</b><span>revise once, then abstain</span></div>
+                </div>
+              </div>
+
+              <div class="layer" style="grid-area:D">
+                <div class="layer-tag">D · Data &amp; Schema Layer</div>
+                <div class="nodes">
+                  <div class="node n-navy" data-node="executor"><b>Read-only Executor</b><span>read-only user</span></div>
+                  <div class="arrow">→</div>
+                  <div class="node n-orange cyl" data-node="db"><b>Star schema</b><span>2 facts · 4 dims</span></div>
+                  <div class="node n-slate" data-node="metadata"><b>Schema metadata</b><span>allow-list</span></div>
+                  <div class="node n-brown" data-node="generator"><b>Synthetic data</b><span>generator (offline)</span></div>
+                </div>
+              </div>
+            </div>
+            <p class="caption">The model proposes SQL; fixed rules in layer C and a read-only database
+              account decide what runs.</p>
+          </div>
+
+          <div class="lower-grid">
+            <div class="card" id="result-card">
+              <h2>Result</h2>
+              <div id="result" class="empty">Ask a question to see the answer, the SQL and the
+                explanation here.</div>
+            </div>
+            <div class="card">
+              <h2>Request trace</h2>
+              <ol id="trace" class="trace"><li class="muted">No request yet.</li></ol>
+              <h2 class="mt">Validator checks</h2>
+              <ul id="checks" class="checks"></ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ AUDIT LOG -->
+    <section id="tab-audit" class="tabpanel">
+      <div class="card">
+        <div class="card-head">
+          <h2>Audit log <small>every decision is recorded</small></h2>
+          <div>
+            <button class="btn" id="audit-refresh">Refresh</button>
+            <button class="btn" id="audit-clear">Clear log</button>
+          </div>
+        </div>
+        <div class="table-wrap"><table class="data" id="audit-table"></table></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ EVALUATION -->
+    <section id="tab-eval" class="tabpanel">
+      <div class="card">
+        <div class="card-head">
+          <h2>Evaluation harness <small>benchmark: dev / test / challenge</small></h2>
+          <button class="btn-primary" id="eval-run">Run benchmark</button>
+        </div>
+        <p class="muted" id="eval-intro">Runs every benchmark question through the full pipeline,
+          once with the validator and once without it (ablation B4).</p>
+        <div id="eval-summary"></div>
+        <div class="metric-notes">
+          <div><b>Execution accuracy</b> Result rows match the gold query (test split).</div>
+          <div><b>Block rate</b> Unsafe requests stopped <em>before</em> reaching the database.</div>
+          <div><b>Abstention quality</b> Out-of-scope or ambiguous questions declined or clarified.</div>
+          <div><b>Reliability score</b> +1 correct, 0 abstain, −<span id="penalty">2</span> wrong, averaged.</div>
+        </div>
+        <div id="eval-items"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ SCHEMA -->
+    <section id="tab-schema" class="tabpanel">
+      <div class="card">
+        <div class="card-head">
+          <h2>Star schema <small>two facts, four dimensions</small></h2>
+          <form id="regen-form" class="regen">
+            <label>Seed <input type="number" id="seed" value="7" min="0" max="99999"></label>
+            <button class="btn" type="submit">Regenerate synthetic data</button>
+          </form>
+        </div>
+        <div class="star" id="star"></div>
+        <p class="caption">Columns marked 🔒 hold personal data. They exist in the database but are
+          not on the allow-list, so the validator rejects any query that uses them.</p>
+        <div id="stats" class="stats"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span class="f-mid">Academic Analytics RAG over a Local Star Schema</span>
+    <span class="f-right">SRM Institute of Science and Technology · AY 2026-27</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
