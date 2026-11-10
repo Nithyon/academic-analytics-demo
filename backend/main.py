@@ -72,7 +72,20 @@ def audit_clear():
 
 @app.post("/api/evaluate")
 def evaluate(llm_mode: str = "offline"):
-    return evaluation.run(llm_mode)
+    """Runs the benchmark for the UI (full system vs. no validator) and reshapes the result."""
+    out_dir = config.DATA_DIR / "ui_eval"
+    for old in out_dir.glob("run_*.json"):
+        old.unlink()
+    keys = ["C", "C-novalidator"]
+    r = evaluation.run(llm_mode, configs=keys, out_dir=out_dir, tag=f"ui_{llm_mode}")
+    lam = str(config.WRONG_ANSWER_PENALTY)
+    summary = [{"config": s["config"], "execution_accuracy": s["ex_relaxed"], "block_rate": s["block_rate"],
+                "abstention_quality": s["abstention_action_accuracy"], "reliability_score": s["reliability"][lam],
+                "mean_latency_ms": s["latency_p50_ms"]} for s in r["summary"]]
+    items = [{"config": evaluation.CONFIGS[k]["label"],
+              "items": [{**row, "points": row["points"][lam]} for row in r["items"][k]]} for k in keys]
+    return {"summary": summary, "items": items, "n_items": r["n_items"],
+            "penalty": config.WRONG_ANSWER_PENALTY, "llm_mode": llm_mode}
 
 
 @app.post("/api/regenerate")

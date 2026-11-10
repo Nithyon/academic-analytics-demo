@@ -17,8 +17,12 @@ LABELS = {
     "course_code": "course", "section_name": "section", "term_name": "term",
     "assessment_type": "assessment type", "program": "program",
     "attendance_band": "attendance band", "student_id": "student",
+    "section_code": "section", "dept_code": "department", "program_name": "program",
+    "day_name": "day", "attendance_rate": "attendance rate (%)", "avg_internal_marks": "average internal marks",
+    "avg_total_marks": "average total marks", "component_name": "component", "grade": "grade",
 }
-PLURAL = {"course": "courses", "section": "sections", "term": "terms",
+PLURAL = {"course": "courses", "section": "sections", "term": "terms", "day": "days",
+          "department": "departments", "component": "components", "grade": "grades",
           "assessment type": "assessment types", "program": "programs",
           "attendance band": "attendance bands", "student": "students"}
 
@@ -102,11 +106,25 @@ def grounding_check(summary, columns, rows):
     return {"passed": not missing, "numbers_checked": len(found), "missing": missing}
 
 
-def explain(sql, columns, rows, tables, cols_used):
+def definitions_used(sql, card_ids):
+    """Metric definitions from the ontology that this query actually relies on."""
+    from .ontology import METRICS
+    low = sql.lower()
+    out = []
+    for m in METRICS:
+        if m["id"] not in (card_ids or []):
+            continue
+        if any(t in low for t in m["tables"]):
+            out.append(f"{m['label']}: {m['definition']}")
+    return out
+
+
+def explain(sql, columns, rows, tables, cols_used, card_ids=None):
     summary = summarise(columns, rows)
     return {
         "summary": summary,
         "computed": how_computed(sql),
+        "definitions": definitions_used(sql, card_ids),
         "tables_used": tables,
         "columns_used": cols_used,
         "grounding": grounding_check(summary, columns, rows),

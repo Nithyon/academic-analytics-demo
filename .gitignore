@@ -5,3 +5,8 @@ venv/
 data/*.db
 logs/
 *.pid
+data/sheets/
+data/sheets_roundtrip/
+data/ui_eval/
+data/test_import/
+results/smoke/

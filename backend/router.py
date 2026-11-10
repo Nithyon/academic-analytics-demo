@@ -12,10 +12,14 @@ PREDICTION = re.compile(
 UNANSWERABLE = {
     "salary": "faculty salaries", "salaries": "faculty salaries", "fee": "fees", "fees": "fees",
     "hostel": "hostel records", "placement": "placements", "placements": "placements",
-    "cgpa": "CGPA", "gpa": "GPA", "weather": "the weather", "library": "library usage",
-    "scholarship": "scholarships", "timetable": "timetables",
+    "cgpa": "CGPA", "weather": "the weather", "library": "library usage",
+    "scholarship": "scholarships", "scholarships": "scholarships", "timetable": "timetables",
+    "feedback": "course feedback", "canteen": "canteen records", "bus": "transport records",
+    "salaries.": "faculty salaries", "faculty": "faculty records", "professor": "faculty records",
+    "teacher": "faculty records", "internship": "internships", "internships": "internships",
 }
-SENSITIVE = re.compile(r"\b(religion|caste|income|medical|health|disability|phone|address)\b", re.I)
+SENSITIVE = re.compile(r"\b(religion|caste|community|income|medical history|health|disability|"
+                       r"phone|address|gender|aadhaar|parent)\b", re.I)
 
 WRITE_WORDS = re.compile(r"\b(drop|delete|truncate|update|insert|alter|wipe|erase)\b|;", re.I)
 
@@ -23,9 +27,12 @@ SCORE_WORDS = re.compile(r"\b(marks?|scores?|grades?|performance|results?)\b", r
 ATTENDANCE_WORD = re.compile(r"\battendance\b", re.I)
 GROUPING = re.compile(
     r"\b(per|by|each|every|for|in|across|over|course|courses|section|sections|term|terms|"
-    r"semester|type|types|student|students|program|programs|programme|trend|changed|overall|"
-    r"quiz|mid-?term|end-?sem\w*|pass|band|below|under|above|top|lowest|highest|names?)\b|"
-    r"\b[a-z]{2}\s?\d{4}\b", re.I)
+    r"semester|sem|type|types|student|students|program|programs|programme|trend|changed|overall|"
+    r"department|departments|dept|batch|branch|weekday|day|days|week|weeks|month|months|"
+    r"cla-?\d?|internal|external|lab|theory|assignment|completion|experiments?|viva|"
+    r"end-?sem\w*|pass|band|below|under|above|top|lowest|highest|names?|cse|ece|eee|"
+    r"dbms|dsa|cn|daa|dsp|vlsi|iot|grade|grades)\b|"
+    r"\b\d{2}[a-z]{3}\d{3}[tljp]\b", re.I)
 
 
 def route(question: str) -> dict:

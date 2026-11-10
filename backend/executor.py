@@ -14,8 +14,8 @@ class ExecutionError(Exception):
     pass
 
 
-def execute(sql, limit=config.ROW_LIMIT, timeout=config.QUERY_TIMEOUT_S):
-    uri = f"file:{config.DB_PATH.as_posix()}?mode=ro"
+def execute(sql, limit=config.ROW_LIMIT, timeout=config.QUERY_TIMEOUT_S, db_path=None):
+    uri = f"file:{(db_path or config.DB_PATH).as_posix()}?mode=ro"
     con = sqlite3.connect(uri, uri=True, timeout=1)
     try:
         con.execute("PRAGMA query_only = ON")

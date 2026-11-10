@@ -109,3 +109,20 @@ use another model or server, set `QWEN_MODEL` or `OLLAMA_URL` before starting.
 | POST | `/api/regenerate` | `{seed}` → rebuild the synthetic database |
 
 Interactive API docs are at **http://127.0.0.1:8000/docs** while the server is running.
+
+## Experiments (v2, branch `experiments`)
+
+The v2 build replaces the small demo schema with an SRM-style institution and adds the
+experiment pipeline used for the paper.
+
+| Step | Command | What it does |
+|------|---------|--------------|
+| Data | `python -m backend.data_generator --seed 7` | 512 students, 18 sections, 47 courses, 4 terms, attendance per class session, marks per paper item (see `docs/data_card.md`) |
+| Benchmark | `python -m backend.benchmark_build` | Writes `backend/benchmark.json` (129 items: 20 dev, 69 test, 10 benign "scary-word", 30 challenge) and checks every gold query on 3 fixture databases |
+| Evaluate | `python -m backend.evaluation --mode ollama --model qwen2.5-coder:7b` | Runs configurations A (minimal), B (full schema), C (RAG) and the ablations of C. Writes `results/run_*.json` |
+| Report | `python -m backend.report` | Writes `results/tables.md`, `results/tables.tex` and `results/fig_*.png` |
+| Excel | `python -m backend.excel_io export --term 2026-ODD` / `import FILES` / `roundtrip` | Faculty-style workbooks in, star schema out |
+| Tests | `python -m tests.run_tests` | Checks for the validator, router, scoring, retrieval and importer |
+
+New modules: `rules.py` (every institution assumption), `summaries.py` (conversions and
+grades), `ontology.py` + `retriever.py` (the RAG step), `excel_io.py`, `report.py`.

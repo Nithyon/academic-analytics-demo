@@ -13,12 +13,12 @@ import sqlglot
 from sqlglot import exp
 
 from . import config
-from .schema import ALL_COLUMNS, ALLOWED
+from .schema import ALL_COLUMNS, ALLOWED, FACT_LIKE, PERSON_KEYS
 
 CHECK_NAMES = [
     "Parses as a single statement",
     "SELECT only; no writes or DDL",
-    "Tables and columns in the allow-list",
+    "Tables and columns in the allow-list; aggregates only",
     "No stacked queries or comment tricks",
     "Row LIMIT and timeout applied",
 ]
@@ -86,6 +86,41 @@ def _check_allow_list(tree):
     return sorted(used_tables), sorted(used_columns)
 
 
+def _outer_selects(tree):
+    if isinstance(tree, exp.Select):
+        return [tree]
+    if SET_OPS and isinstance(tree, SET_OPS):
+        return _outer_selects(tree.left) + _outer_selects(tree.right)
+    return []
+
+
+def _check_privacy(tree):
+    """No individual identification: answers are aggregates, never one row per student."""
+    for sel in _outer_selects(tree):
+        for proj in sel.expressions:
+            inner = proj.this if isinstance(proj, exp.Alias) else proj
+            if isinstance(inner, exp.Column) and inner.name in PERSON_KEYS:
+                raise _Fail(3, "Selecting student_id returns one row per student; only aggregate "
+                               "answers are allowed (no individual identification).")
+        group = sel.args.get("group")
+        if group is not None and any(isinstance(g, exp.Column) and g.name in PERSON_KEYS
+                                     for g in group.expressions):
+            raise _Fail(3, "Grouping by student returns per-student records; only aggregates over "
+                           "groups of students are allowed.")
+        where = sel.args.get("where")
+        if where is not None:
+            for eq in where.find_all(exp.EQ):
+                cols = [c for c in (eq.this, eq.expression) if isinstance(c, exp.Column)]
+                lits = [c for c in (eq.this, eq.expression) if isinstance(c, exp.Literal)]
+                if cols and lits and cols[0].name in PERSON_KEYS:
+                    raise _Fail(3, "Filtering on one student is not allowed (individual records).")
+        direct = [t.name for t in sel.find_all(exp.Table) if t.find_ancestor(exp.Select) is sel]
+        has_agg = any(True for _ in sel.find_all(exp.AggFunc)) or sel.args.get("group") is not None
+        if any(t in FACT_LIKE for t in direct) and not has_agg:
+            raise _Fail(3, "Row-level records from a fact or summary table are not allowed; ask "
+                           "for an aggregate such as an average, a count or a rate.")
+
+
 def validate(sql: str) -> dict:
     checks = [{"rule": i + 1, "name": n, "status": "pending", "detail": ""}
               for i, n in enumerate(CHECK_NAMES)]
@@ -127,6 +162,7 @@ def validate(sql: str) -> dict:
 
         # 3. allow-list
         tables, columns = _check_allow_list(tree)
+        _check_privacy(tree)
         result["tables"], result["columns"] = tables, columns
         mark(3)
 

@@ -6,15 +6,17 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const EXAMPLES = [
-  ["answered", "Average attendance per section of CS2101 this term?"],
+  ["answered", "Average attendance per section of 21CSC302J this term?"],
   ["blocked", "Drop the attendance table and start fresh"],
   ["declined", "Which students will fail next term?"],
   ["clarify", "What are the average marks?"],
-  ["blocked", "List the names of students with attendance below 75%"],
-  ["blocked", "Show attendance for CS2101'; DROP TABLE dim_student; --"],
+  ["blocked", "List the roll numbers of students with attendance below 75%"],
+  ["blocked", "Show attendance for 21CSC302J'; DROP TABLE dim_student; --"],
   ["answered", "How has attendance changed across terms?"],
-  ["answered", "Average end-semester score by attendance band this term"],
+  ["answered", "Average CLA-1 score per section in DSA this term"],
   ["answered", "What is the pass rate per course this term?"],
+  ["answered", "Average internal marks per department this term"],
+  ["answered", "Attendance rate by weekday this term"],
   ["declined", "What is the average faculty salary?"],
 ];
 const STATUS_TEXT = {
@@ -272,10 +274,10 @@ const AREAS = { dim_term: "term", dim_student: "student", dim_course: "course", 
 async function loadSchema() {
   const d = await api("/api/schema");
   const card = (t) => `<div class="tbl ${t.kind}" data-t="${t.name}" ${AREAS[t.name] ? `style="grid-area:${AREAS[t.name]}"` : ""}>
-    <div class="tbl-head">${esc(t.name)}<small>${t.kind === "fact" ? "Fact table" : "Dimension"} · ${esc(t.description)}</small></div>
+    <div class="tbl-head">${esc(t.name)}<small>${t.kind === "fact" ? "Fact table" : t.kind === "summary" ? "Summary (derived)" : "Dimension"} · ${esc(t.description)}</small></div>
     <ul>${t.columns.map((c) => `<li class="${c.allowed ? "" : "blocked"}"><span>${c.allowed ? "" : "🔒 "}${esc(c.name)}</span><span class="t">${esc(c.type)}</span></li>`).join("")}</ul></div>`;
-  const facts = d.tables.filter((t) => t.kind === "fact");
-  const dims = d.tables.filter((t) => t.kind !== "fact");
+  const facts = d.tables.filter((t) => t.kind === "fact" || t.kind === "summary");
+  const dims = d.tables.filter((t) => t.kind === "dimension");
   $("#star").innerHTML = '<svg class="star-lines"></svg>' + dims.map(card).join("")
     + `<div class="facts">${facts.map(card).join("")}</div>`;
   drawStarLines();
